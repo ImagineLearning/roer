@@ -3,9 +3,9 @@ package main
 import (
 	"os"
 
+	"github.com/ImagineLearning/roer/cmd"
+	"github.com/ImagineLearning/roer/spinnaker"
 	"github.com/sirupsen/logrus"
-	"github.com/spinnaker/roer/cmd"
-	"github.com/spinnaker/roer/spinnaker"
 )
 
 // version is set via ldflags

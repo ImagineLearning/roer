@@ -1,6 +1,6 @@
 package roer
 
-import "github.com/spinnaker/roer/spinnaker"
+import "github.com/ImagineLearning/roer/spinnaker"
 
 // PipelineTemplate is a pipeline template
 type PipelineTemplate struct {

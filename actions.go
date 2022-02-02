@@ -6,11 +6,11 @@ import (
 	"io/ioutil"
 	"time"
 
+	"github.com/ImagineLearning/roer/spinnaker"
 	"github.com/ghodss/yaml"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"github.com/spinnaker/roer/spinnaker"
 	"gopkg.in/urfave/cli.v1"
 )
 

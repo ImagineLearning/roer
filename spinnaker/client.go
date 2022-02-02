@@ -150,6 +150,7 @@ func (c *client) PublishTemplate(template map[string]interface{}, options Publis
 	}
 
 	logrus.WithFields(logrus.Fields{
+		"url":    url,
 		"status": resp.StatusCode,
 		"body":   string(respBody),
 	}).Debug("Response")

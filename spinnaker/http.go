@@ -5,11 +5,13 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -19,6 +21,8 @@ import (
 
 // HTTPClientFactory creates a new http.Client from the cli.Context
 type HTTPClientFactory func(cc *cli.Context) (*http.Client, error)
+
+var accessToken string
 
 // DefaultHTTPClientFactory creates a basic http.Client that by default can
 // take an x509 cert/key pair for API authentication.
@@ -43,6 +47,14 @@ func DefaultHTTPClientFactory(cc *cli.Context) (*http.Client, error) {
 	c = http.Client{
 		Timeout: time.Duration(cc.GlobalInt("clientTimeout")) * time.Second,
 		Jar:     cookieJar,
+	}
+
+	if cc.GlobalIsSet("accessToken") {
+		accessToken = cc.GlobalString("accessToken")
+	} else if os.Getenv("SPINNAKER_ACCESS_TOKEN") != "" {
+		accessToken = os.Getenv("SPINNAKER_ACCESS_TOKEN")
+	} else {
+		accessToken = ""
 	}
 
 	var certPath string
@@ -100,7 +112,7 @@ func (c *client) postJSON(url string, body interface{}) (resp *http.Response, re
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "marshaling body to json")
 	}
-	resp, err = c.httpClient.Post(url, "application/json", bytes.NewBuffer(payload))
+	resp, err = c.Post(url, "application/json", bytes.NewBuffer(payload))
 	if err != nil {
 		return nil, nil, errors.Wrapf(err, "posting to %s", url)
 	}
@@ -120,7 +132,7 @@ func (c *client) postJSON(url string, body interface{}) (resp *http.Response, re
 }
 
 func (c *client) postForm(url string, data url.Values) (resp *http.Response, respBody []byte, err error) {
-	resp, err = c.httpClient.PostForm(url, data)
+	resp, err = c.Post(url, "application/x-www-form-urlencoded", strings.NewReader(data.Encode()))
 	if err != nil {
 		return nil, nil, errors.Wrapf(err, "posting to %s", url)
 	}
@@ -140,7 +152,12 @@ func (c *client) postForm(url string, data url.Values) (resp *http.Response, res
 }
 
 func (c *client) getJSON(url string) (resp *http.Response, respBody []byte, err error) {
-	resp, err = c.httpClient.Get(url)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to create get request object")
+	}
+
+	resp, err = c.Do(req)
 	if err != nil {
 		return nil, nil, errors.Wrapf(err, "posting to %s", url)
 	}
@@ -165,7 +182,7 @@ func (c *client) delete(url string) (resp *http.Response, respBody []byte, err e
 		return nil, nil, errors.Wrap(err, "failed to create delete request object")
 	}
 
-	resp, err = c.httpClient.Do(req)
+	resp, err = c.Do(req)
 	if err != nil {
 		return nil, nil, errors.Wrapf(err, "failed to make delete request to %s", url)
 	}
@@ -182,4 +199,28 @@ func (c *client) delete(url string) (resp *http.Response, respBody []byte, err e
 	}
 
 	return resp, respBody, nil
+}
+
+func (c *client) Post(url, contentType string, body io.Reader) (resp *http.Response, err error) {
+	req, err := http.NewRequest("POST", url, body)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create post request object")
+	}
+
+	req.Header.Set("Content-Type", contentType)
+
+	return c.Do(req)
+}
+
+func (c *client) Do(req *http.Request) (resp *http.Response, err error) {
+	if accessToken != "" {
+		// high chance that it is a JWT, so use Bearer token
+		if accessToken[0] == 'e' && accessToken[1] == 'y' {
+			req.Header.Add("Authorization", "Bearer "+accessToken)
+		} else { // assume that it is Basic auth token
+			req.Header.Add("Authorization", "Basic "+accessToken)
+		}
+	}
+
+	return c.httpClient.Do(req)
 }

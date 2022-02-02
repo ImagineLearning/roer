@@ -4,9 +4,9 @@ import (
 	"errors"
 	"os"
 
+	"github.com/ImagineLearning/roer"
+	"github.com/ImagineLearning/roer/spinnaker"
 	"github.com/sirupsen/logrus"
-	"github.com/spinnaker/roer"
-	"github.com/spinnaker/roer/spinnaker"
 	"gopkg.in/urfave/cli.v1"
 )
 
@@ -284,6 +284,18 @@ func NewRoer(version string, clientConfig spinnaker.ClientConfig) *cli.App {
 		cli.StringFlag{
 			Name:  "apiSession, as",
 			Usage: "your active api session",
+		},
+		cli.StringFlag{
+			Name:  "accessToken, a",
+			Usage: "access token for authentication",
+		},
+		cli.StringFlag{
+			Name:  "username, u",
+			Usage: "username for basic authentication",
+		},
+		cli.StringFlag{
+			Name:  "password, p",
+			Usage: "password for basic authentication",
 		},
 		cli.BoolFlag{
 			Name:  "insecure",
