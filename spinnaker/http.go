@@ -152,15 +152,7 @@ func (c *client) postForm(url string, data url.Values) (resp *http.Response, res
 }
 
 func (c *client) getJSON(url string) (resp *http.Response, respBody []byte, err error) {
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to create get request object")
-	}
-
-	resp, err = c.Do(req)
-	if err != nil {
-		return nil, nil, errors.Wrapf(err, "posting to %s", url)
-	}
+	resp, err = c.get(url)
 
 	defer func() {
 		if cerr := resp.Body.Close(); cerr != nil && err != nil {
@@ -199,6 +191,20 @@ func (c *client) delete(url string) (resp *http.Response, respBody []byte, err e
 	}
 
 	return resp, respBody, nil
+}
+
+func (c *client) get(url string) (resp *http.Response, err error) {
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create get request object")
+	}
+
+	resp, err = c.Do(req)
+	if err != nil {
+		return nil, errors.Wrapf(err, "getting from %s", url)
+	}
+
+	return resp, nil
 }
 
 func (c *client) Post(url, contentType string, body io.Reader) (resp *http.Response, err error) {
